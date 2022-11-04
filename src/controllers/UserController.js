@@ -1,50 +1,78 @@
+const User = require('../../models').Users
+const Company = require('../../models').Company
+
 function index(req, res) {
-    req.getConnection((err,conn) => {
-        conn.query('SELECT * FROM users', (err, users) => {
-            if(err){
-                console.log(err);
-            }
-            res.send(users)
-        })
+    let obj
+    User.findAll( {
+        attributes: { exclude: ['CompanyId'] },
+        include : [{ model: Company }]
     })
+        .then((data) => {
+            data.forEach(x => {
+                x.address = JSON.parse(x.address)
+            });
+            res.json(data)
+        })
+        .catch((error) => {
+            res.json({error:error})
+        })
 }
 
-function store(req, res) {
+async function store(req, res) {
     const data = req.body;
-
-    req.getConnection((err, conn)=>{
-        conn.query('INSERT INTO users SET ?', [data], (err, rows) => {
-            console.log(rows);
-        })
+    
+    let company = await Company.create(data.company)
+    .then((data) => {
+        return data
     })
+    .catch((error) => {
+        res.json({error:error})
+    })
+    data.CompanyId = company.id;
 
-    res.send(data)
+    await User.create(data)
+        .then((data) => {
+            res.json(data)
+        })
+        .catch((error) => {
+            res.json({error:error})
+        })
 }
 
 function remove(req, res) {
     const id = req.body.id;
 
-    req.getConnection((err, conn)=>{
-        conn.query('DELETE FROM users WHERE ID = ?', [id], (err, rows) => {
-            console.log(rows);
+    User.destroy({ where: { id: id } })
+        .then((data) => {
+            res.json(id)
         })
-    })
-
-    res.send(id)
+        .catch((error) => {
+            res.json({error:error})
+        })
 }
 
-function update(req, res) {
+async function update(req, res) {
     const id = req.body.id;
     const data = req.body;
     delete data.id
-
-    req.getConnection((err, conn)=>{
-        conn.query('UPDATE users SET ? WHERE ID = ?', [data,id], (err, rows) => {
-            console.log(rows);
+    await Company.update(data.company,{
+        where: {
+          id: data.company.id
+        }})
+        .catch((error) => {
+            res.json({error:error})
         })
-    })
 
-    res.send(data)
+    await User.update(data,{
+        where: {
+          id: id
+        }})
+        .then((data) => {
+            res.json(data)
+        })
+        .catch((error) => {
+            res.json({error:error})
+        })
 }
 
 module.exports = {

@@ -1,24 +1,27 @@
 const express = require('express');
+const cors = require("cors");
 const myconnection = require('express-myconnection');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 const usersRoutes = require('./routes/users');
+require('../asociations');
 const port = (process.env.port || 3000)
 const app = express();
 
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(cors());
 
 app.use(bodyParser.json());
 
-app.use(myconnection(mysql, {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    port: 3306,
-    database: 'antpack'
-}, 'single'))
+// app.use(myconnection(mysql, {
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     port: 3306,
+//     database: 'antpack'
+// }, 'single'))
 
 app.listen(port, (error)=>{
     if(error){
